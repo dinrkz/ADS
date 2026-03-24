@@ -50,7 +50,6 @@ public String isPrime(int n, int i) {
 
 
 
-
 //Task 4. Factorial
 /*public class Main {
     public static void main(String[] args) {
