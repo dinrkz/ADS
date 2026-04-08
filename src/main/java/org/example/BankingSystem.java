@@ -1,18 +1,17 @@
 package org.example;
+import java.util.Scanner;
 
-import java.util.*;
-
-public class BankingSystem{
-    static LinkedList<BankAccount> accounts = new LinkedList<>();
-    static Stack<String> transactionHistory = new Stack<>();
-    static Queue<String> billQueue = new LinkedList<>();
-    static Queue<BankAccount> accountRequests = new LinkedList<>();
+public class BankingSystem {
+    static MyQueue accountRequests = new MyQueue();
+    static MyQueue billQueue = new MyQueue();
+    static MyStack transactionHistory = new MyStack(100);
+    static BankAccount[] accounts = new BankAccount[100];
+    static int accountCount = 0;
 
     static Scanner scanner = new Scanner(System.in);
 
     public static void main(String[] args) {
-        runTask6();
-
+        initAccounts();
 
         while (true) {
             System.out.println("\n--- MAIN MENU ---");
@@ -42,7 +41,6 @@ public class BankingSystem{
         System.out.println("3. Withdraw Money");
         System.out.println("4. Pay a Bill");
         System.out.println("5. Undo Last Action");
-        System.out.print("Select: ");
         int choice = scanner.nextInt();
         scanner.nextLine();
 
@@ -53,45 +51,23 @@ public class BankingSystem{
                 System.out.print("Initial balance: ");
                 double bal = scanner.nextDouble();
                 String accNum = "ACC" + (int) (Math.random() * 1000);
-                accountRequests.add(new BankAccount(accNum, name, bal));
-                System.out.println("Request submitted to Admin queue.");
+                accountRequests.enqueue(new BankAccount(accNum, name, bal));
+                System.out.println("Request added to Queue.");
             }
             case 2 -> {
-                BankAccount account = findAccount();
-                if (account != null) {
-                    System.out.print("Deposit amount: ");
-                    double amount = scanner.nextDouble();
-                    account.balance += amount;
-                    transactionHistory.push("Deposit " + amount + " to " + account.username);
-                    System.out.println("New balance: " + account.balance);
+                BankAccount acc = findAccount();
+                if (acc != null) {
+                    System.out.print("Amount: ");
+                    double amt = scanner.nextDouble();
+                    acc.balance += amt;
+                    transactionHistory.push("Deposit " + amt + " for " + acc.username);
                 }
-            }
-            case 3 -> {
-                BankAccount account = findAccount();
-                if (account != null) {
-                    System.out.print("Withdraw amount: ");
-                    double amount = scanner.nextDouble();
-                    if (account.balance >= amount) {
-                        account.balance -= amount;
-                        transactionHistory.push("Withdraw " + amount + " from " + account.username);
-                        System.out.println("New balance: " + account.balance);
-                    } else {
-                        System.out.println("Insufficient funds!");
-                    }
-                }
-            }
-            case 4 -> {
-                System.out.print("Enter bill name (e.g., Electricity): ");
-                String bill = scanner.nextLine();
-                billQueue.add(bill);
-                transactionHistory.push("Bill added: " + bill);
-                System.out.println("Bill added to queue.");
             }
             case 5 -> {
                 if (!transactionHistory.isEmpty()) {
-                    System.out.println("Undo → " + transactionHistory.pop() + " removed");
+                    System.out.println("Undo: " + transactionHistory.pop());
                 } else {
-                    System.out.println("No transactions to undo.");
+                    System.out.println("History empty.");
                 }
             }
         }
@@ -113,54 +89,35 @@ public class BankingSystem{
     }
 
     static void adminMenu() {
-        System.out.println("\n--- ADMIN AREA ---");
-        System.out.println("1. Process Account Requests (Queue -> LinkedList)");
-        System.out.println("2. Process Bill Payments (FIFO)");
-        System.out.println("3. View All Active Accounts");
+        System.out.println("\n--- ADMIN ---");
+        System.out.println("1. Process Account Requests");
+        System.out.println("2. View All Accounts");
         int choice = scanner.nextInt();
 
-        switch (choice) {
-            case 1 -> {
-                while (!accountRequests.isEmpty()) {
-                    BankAccount req = accountRequests.poll();
-                    accounts.add(req);
-                    System.out.println("Approved account for: " + req.username);
-                }
+        if (choice == 1) {
+            while (!accountRequests.isEmpty()) {
+                BankAccount b = (BankAccount) accountRequests.dequeue();
+                accounts[accountCount++] = b;
+                System.out.println("Account created for " + b.username);
             }
-            case 2 -> {
-                if (!billQueue.isEmpty()) {
-                    System.out.println("Processing: " + billQueue.poll());
-                } else {
-                    System.out.println("No bills to pay.");
-                }
-            }
-            case 3 -> {
-                System.out.println("Active Accounts:");
-                for (int i = 0; i < accounts.size(); i++) {
-                    System.out.println((i + 1) + ". " + accounts.get(i));
-                }
+        } else if (choice == 2) {
+            for (int i = 0; i < accountCount; i++) {
+                System.out.println(accounts[i]);
             }
         }
     }
 
-
-    static void runTask6() {
-        System.out.println("Initializing predefined accounts (Array Task 6)...");
-        BankAccount[] fixedAccounts = new BankAccount[3];
-        fixedAccounts[0] = new BankAccount("101", "Ali", 150000);
-        fixedAccounts[1] = new BankAccount("102", "Sara", 220000);
-        fixedAccounts[2] = new BankAccount("103", "Ivan", 50000);
-
-        Collections.addAll(accounts, fixedAccounts);
+    static void initAccounts() {
+        accounts[accountCount++] = new BankAccount("101", "Ali", 150000);
+        accounts[accountCount++] = new BankAccount("102", "Sara", 220000);
     }
 
     static BankAccount findAccount() {
-        System.out.print("Enter username: ");
+        System.out.print("Username: ");
         String name = scanner.next();
-        for (BankAccount acc : accounts) {
-            if (acc.username.equalsIgnoreCase(name)) return acc;
+        for (int i = 0; i < accountCount; i++) {
+            if (accounts[i].username.equalsIgnoreCase(name)) return accounts[i];
         }
-        System.out.println("Account not found!");
         return null;
     }
 }
